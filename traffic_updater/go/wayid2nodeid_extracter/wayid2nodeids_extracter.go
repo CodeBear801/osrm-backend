@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -62,13 +64,10 @@ func wayid2nodeids(infile io.Reader, outfile io.Writer) {
 			case *osmpbf.Node:
 			case *osmpbf.Way:
 				// Transform
-				wayid2nodeidsLine := fmt.Sprintf("%d,", v.ID) +
-					strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.NodeIDs)), ","), "[]") +
-					"\n"
-				if len(wayid2nodeidsLine) == 0 || len(v.NodeIDs) == 0 {
-					continue
-				}
-				_, err := loader.WriteString(wayid2nodeidsLine)
+				str := covertWayObj2IdMappingString(v)
+				//str := covertWayObj2MockSpeed(v)
+
+				_, err := loader.WriteString(str)
 				if err != nil {
 					log.Fatal(err)
 					return
@@ -84,6 +83,21 @@ func wayid2nodeids(infile io.Reader, outfile io.Writer) {
 	}
 
 	fmt.Printf("Total ways: %d, total nodes: %d\n", wc, nc)
+}
+
+func covertWayObj2IdMappingString(v *osmpbf.Way) string {
+	// format: wayid,nodeid1,nodeid2, ...
+	return strconv.FormatUint((uint64)(v.ID), 10) + "," +
+		strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.NodeIDs)), ","), "[]") +
+		"\n"
+}
+
+func covertWayObj2MockSpeed(v *osmpbf.Way) string {
+	// format: wayid,random speed
+	return strconv.FormatUint((uint64)(v.ID), 10) +
+		"," +
+		strconv.Itoa(rand.Intn(100)) +
+		"\n"
 }
 
 var flags struct {
